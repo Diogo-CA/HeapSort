@@ -37,7 +37,8 @@ Este projeto foi desenvolvido com foco acadêmico e de portfólio para demonstra
 
 ```text
 heapsort/
-├── heapsortcpp.c          # Implementação canônica do Heapsort em C
+├── C/                     # Implementação canônica em C
+│   └── heapsortcpp.c      # Código-fonte em C
 ├── iniciar_windows.bat    # Script de 1 clique para executar no Windows
 ├── iniciar_mac.sh         # Script de 1 clique para executar no macOS / Linux
 ├── ROTEIRO_APRESENTACAO.md# Guia para apresentação com divisão de falas e FAQ
@@ -87,7 +88,7 @@ Caso queira executar a implementação em C puro:
 
 ```bash
 # Compilando com GCC
-gcc -Wall -O2 heapsortcpp.c -o heapsort
+gcc -Wall -O2 C/heapsortcpp.c -o heapsort
 
 # Executando no Linux/macOS
 ./heapsort
