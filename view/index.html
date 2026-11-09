@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heapsort Interativo - Visualizador Didático</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- CABEÇALHO -->
+    <header class="main-header">
+      <div class="header-left">
+        <div class="logo-badge">
+          <span class="tree-icon">🌲</span>
+          <div>
+            <h1>Heapsort <span>Visualizer</span></h1>
+            <p class="subtitle">Apresentação Prática & Didática de Algoritmos</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <!-- Indicador de Fase do Algoritmo -->
+        <div id="phaseIndicator" class="phase-badge phase-idle">
+          <span class="phase-dot"></span>
+          <span id="phaseLabel">Aguardando Início</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="btnToggleSound" class="btn btn-outline" title="Ativar/Desativar Efeitos Sonoros">
+          🔊 Som: Ligado
+        </button>
+        <button id="btnFullscreen" class="btn btn-outline" title="Modo Apresentação (Tela Cheia)">
+          ⛶ Tela Cheia
+        </button>
+        <button id="btnTheoryModal" class="btn btn-secondary" title="Ver Conceitos e Complexidade">
+          📖 Teoria & Fórmulas
+        </button>
+        <button id="btnToggleCode" class="btn btn-outline" title="Exibir/Ocultar Código C">
+          💻 Código C
+        </button>
+      </div>
+    </header>
+
+    <!-- BARRA DE CONFIGURAÇÃO E DADOS -->
+    <section class="toolbar-section">
+      <div class="toolbar-group">
+        <label for="customInput"><strong>Vetor de Entrada:</strong></label>
+        <div class="input-with-button">
+          <input type="text" id="customInput" placeholder="Ex: 1, 2, 3, 4, 5, 6" value="1, 2, 3, 4, 5, 6">
+          <button id="btnApplyCustom" class="btn btn-primary-sm">Carregar</button>
+        </div>
+      </div>
+
+      <div class="toolbar-group presets-group">
+        <span class="label-text">Exemplos rápidos:</span>
+        <button class="btn-chip active" data-preset="original">Padrão [1..6]</button>
+        <button class="btn-chip" data-preset="random">Aleatório (8)</button>
+        <button class="btn-chip" data-preset="reversed">Invertido [9..1]</button>
+        <button class="btn-chip" data-preset="duplicates">Com Repetidos</button>
+        <button class="btn-chip" data-preset="larger">10 Elementos</button>
+      </div>
+
+      <div class="toolbar-group metrics-group">
+        <div class="metric-item">
+          <span class="metric-label">Comparações:</span>
+          <span id="metricComparisons" class="metric-value">0</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Trocas (Swaps):</span>
+          <span id="metricSwaps" class="metric-value">0</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Tamanho Heap:</span>
+          <span id="metricHeapSize" class="metric-value">-</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- NARRATIVA DIDÁTICA / LOG DE EXECUÇÃO -->
+    <section class="explanation-section">
+      <div class="explanation-box" id="explanationBox">
+        <div class="explanation-header">
+          <span class="badge-step" id="stepCounterBadge">Passo 0 de 0</span>
+          <span class="step-title" id="stepTitle">Preparado</span>
+        </div>
+        <p class="explanation-text" id="explanationText">
+          Clique em <strong>"Próximo Passo"</strong> ou <strong>"Play"</strong> para iniciar a demonstração do algoritmo.
+        </p>
+      </div>
+    </section>
+
+    <!-- ÁREA PRINCIPAL: VIZUALIZAÇÃO DUAL (ÁRVORE + VETOR) & CÓDIGO -->
+    <main class="visualization-layout" id="mainLayout">
+      <!-- PAINEL ESQUERDO: ÁRVORE E ARRAY -->
+      <section class="canvas-panel">
+        <!-- Árvore Binária SVG -->
+        <div class="tree-container">
+          <div class="panel-tag">
+            <span>Visão em Árvore Binária Quase Completa (Complete Binary Tree)</span>
+            <div class="legend-mini">
+              <span class="dot dot-parent"></span> Pai
+              <span class="dot dot-child"></span> Filho
+              <span class="dot dot-comparing"></span> Comparando
+              <span class="dot dot-swapping"></span> Trocando
+              <span class="dot dot-sorted"></span> Ordenado
+            </div>
+          </div>
+          <svg id="treeSvg" class="tree-svg"></svg>
+
+          <!-- Card Flutuante de Inspeção de Nó (ao clicar em qualquer nó) -->
+          <div id="nodeInspectorCard" class="node-inspector-card hidden">
+            <div class="inspector-header">
+              <span class="inspector-title" id="inspectorTitle">Nó Inspecionado</span>
+              <button id="btnCloseInspector" class="inspector-close">&times;</button>
+            </div>
+            <div class="inspector-body" id="inspectorBody"></div>
+          </div>
+        </div>
+
+        <!-- Vetor Linear Sincronizado -->
+        <div class="array-container">
+          <div class="panel-tag">
+            <span>Visão Linear na Memória (Vetor / Array <code>v[ ]</code>)</span>
+            <span class="heap-boundary-legend">Linha Tracejada = Limite do Heap Ativo</span>
+          </div>
+          <div id="arrayVisualizer" class="array-boxes-wrapper"></div>
+          
+          <!-- Legenda de fórmulas de índice -->
+          <div class="formulas-strip">
+            <span class="formula-pill"><strong>Pai de $i$:</strong> <code>⌊(i - 1) / 2⌋</code></span>
+            <span class="formula-pill"><strong>Filho Esquerdo:</strong> <code>2 × i + 1</code></span>
+            <span class="formula-pill"><strong>Filho Direito:</strong> <code>2 × i + 2</code></span>
+            <span class="formula-pill"><strong>Último Pai:</strong> <code>⌊(tamanhoHeap - 2) / 2⌋</code></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAINEL DIREITO: CÓDIGO C SINCRONIZADO -->
+      <aside class="code-panel" id="codePanel">
+        <div class="code-panel-header">
+          <span class="code-file-name">heapsortcpp.c (Código em C)</span>
+          <span class="sync-status">● Linha em Execução</span>
+        </div>
+        <div class="code-wrapper">
+          <pre id="codeBlock" class="code-content"><code id="codeLines"></code></pre>
+        </div>
+      </aside>
+    </main>
+
+    <!-- BARRA DE CONTROLE INFERIOR (PLAY/PAUSE, STEP, TIMELINE) -->
+    <footer class="controls-footer">
+      <div class="controls-left">
+        <button id="btnFirst" class="ctrl-btn" title="Ir para o início (Atalho: Home)">⏮</button>
+        <button id="btnPrev" class="ctrl-btn" title="Passo Anterior (Atalho: Seta Esquerda)">◀ Anterior</button>
+        <button id="btnPlay" class="ctrl-btn btn-cta" title="Iniciar Reprodução Automática (Atalho: Espaço)">▶ Iniciar</button>
+        <button id="btnNext" class="ctrl-btn" title="Próximo Passo (Atalho: Seta Direita)">Próximo ▶</button>
+        <button id="btnLast" class="ctrl-btn" title="Ir para o final (Atalho: End)">⏭</button>
+        <button id="btnReset" class="ctrl-btn btn-danger-soft" title="Reiniciar Vetor (Atalho: R)">↺ Resetar</button>
+      </div>
+
+      <div class="controls-center">
+        <label for="timelineSlider" class="timeline-label">Progresso:</label>
+        <input type="range" id="timelineSlider" min="0" max="0" value="0" class="timeline-slider">
+        <span id="sliderPercent" class="slider-percent">0%</span>
+      </div>
+
+      <div class="controls-right">
+        <label for="speedSlider">Velocidade:</label>
+        <input type="range" id="speedSlider" min="200" max="2200" step="100" value="900" class="speed-slider">
+        <span id="speedValue">Normal</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- MODAL DE TEORIA E CONCEITOS PARA A APRESENTAÇÃO -->
+  <div id="theoryModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>📚 Guia Completo do Heapsort para Apresentação</h2>
+        <button id="btnCloseModal" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <section class="modal-section">
+          <h3>1. O que é um Heap?</h3>
+          <p>
+            Um <strong>Heap</strong> é uma <strong>Árvore Binária Quase Completa</strong> (todos os níveis estão cheios, exceto possivelmente o último, preenchido da esquerda para a direita).
+          </p>
+          <div class="info-card">
+            <strong>Propriedade do Max-Heap:</strong> Em cada nó $Pai$, o valor do pai é maior ou igual ao de seus filhos:
+            <br>
+            <code>v[pai] ≥ v[filhoEsq]</code> e <code>v[pai] ≥ v[filhoDir]</code>.
+            <br>
+            Portanto, o <strong>maior elemento de todos sempre reside na raiz</strong> (índice <code>0</code>).
+          </div>
+        </section>
+
+        <section class="modal-section">
+          <h3>2. Mapeamento Matemático do Array em Árvore</h3>
+          <p>Sem ponteiros nem alocação dinâmica! Uma árvore binária é mapeada diretamente em posições de um array linear indexado em 0:</p>
+          <ul class="bullet-list">
+            <li><strong>Filho Esquerdo de $i$:</strong> <code>2 × i + 1</code></li>
+            <li><strong>Filho Direito de $i$:</strong> <code>2 × i + 2</code></li>
+            <li><strong>Pai de $i$:</strong> <code>⌊(i - 1) / 2⌋</code></li>
+            <li><strong>Primeiro nó que NÃO é folha (último pai):</strong> <code>⌊(n - 2) / 2⌋</code></li>
+          </ul>
+        </section>
+
+        <section class="modal-section">
+          <h3>3. As 2 Fases do Heapsort</h3>
+          <div class="phases-cards-grid">
+            <div class="phase-card">
+              <h4>Fase 1: Construção do Max-Heap (Heapify)</h4>
+              <p>
+                Varre os nós do último pai até a raiz (de baixo para cima), chamando <code>constroiHeap</code>.
+                Ao final desta fase, a árvore inteira atende à regra do Max-Heap.
+              </p>
+              <span class="complexity-tag">Complexidade: O(n)</span>
+            </div>
+            <div class="phase-card">
+              <h4>Fase 2: Ordenação por Extração</h4>
+              <p>
+                Repete enquanto <code>tamanhoHeap > 1</code>:
+              </p>
+              <ol>
+                <li>Troca a raiz <code>v[0]</code> (o maior elemento restante) com <code>v[tamanhoHeap - 1]</code> (o último elemento da heap).</li>
+                <li>Reduz <code>tamanhoHeap--</code> (o maior elemento fica travado no final, ordenado).</li>
+                <li>Chama <code>constroiHeap(v, tamanhoHeap, 0)</code> na raiz para restabelecer a propriedade do Max-Heap.</li>
+              </ol>
+              <span class="complexity-tag">Complexidade: O(n log n)</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="modal-section">
+          <h3>4. Resumo de Complexidade</h3>
+          <table class="theory-table">
+            <thead>
+              <tr>
+                <th>Caso</th>
+                <th>Tempo</th>
+                <th>Espaço Auxiliar</th>
+                <th>Estabilidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Melhor Caso</td>
+                <td><span class="badge-good">O(n log n)</span> ou O(n) chaves iguais</td>
+                <td><span class="badge-good">O(1)</span> (In-place)</td>
+                <td><span class="badge-warn">Não Estável</span></td>
+              </tr>
+              <tr>
+                <td>Médio Caso</td>
+                <td><span class="badge-good">O(n log n)</span></td>
+                <td><span class="badge-good">O(1)</span> (In-place)</td>
+                <td><span class="badge-warn">Não Estável</span></td>
+              </tr>
+              <tr>
+                <td>Pior Caso</td>
+                <td><span class="badge-good">O(n log n)</span></td>
+                <td><span class="badge-good">O(1)</span> (In-place)</td>
+                <td><span class="badge-warn">Não Estável</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="modal-section">
+          <h3>5. Dica de Apresentação para o Grupo</h3>
+          <p>
+            Destaque ao professor que, diferentemente do Quicksort (cujo pior caso é $O(n^2)$), o Heapsort garante <strong>$O(n \log n)$</strong> em absolutamente qualquer cenário e não consome memória extra além do vetor de entrada!
+          </p>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="heapsort.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
